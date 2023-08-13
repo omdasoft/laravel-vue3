@@ -1,12 +1,16 @@
 <script setup>
 import { ref, onMounted, reactive } from "vue";
+import { Form, Field, ErrorMessage } from "vee-validate";
+import { object, string, number, date } from "yup";
+
+// import * as yup from "yup";
 
 const users = ref({});
-const form = reactive({
-    name: "",
-    email: "",
-    password: "",
-});
+// const form = reactive({
+//     name: "",
+//     email: "",
+//     password: "",
+// });
 
 const getUsers = () => {
     axios.get("/api/users").then((response) => {
@@ -15,16 +19,28 @@ const getUsers = () => {
     });
 };
 
-const createUser = () => {
-    axios.post("/api/users", form)
-    .then((respnse) => {
+const schema = object({
+    name: string().required(),
+    email: string().email().required(),
+    password: string().required().min(8),
+});
+
+const createUser = (values, {resetForm}) => {
+    axios.post("/api/users", values).then((respnse) => {
         users.value.unshift(respnse.data);
-        form.name = '';
-        form.email = '';
-        form.password = '';
-        $('#createNewUser').modal('hide');
+        $("#createNewUser").modal("hide");
+        resetForm();
     });
 };
+// const createUser = () => {
+//     axios.post("/api/users", form).then((respnse) => {
+//         users.value.unshift(respnse.data);
+//         form.name = "";
+//         form.email = "";
+//         form.password = "";
+//         $("#createNewUser").modal("hide");
+//     });
+// };
 
 onMounted(() => {
     getUsers();
@@ -110,34 +126,50 @@ onMounted(() => {
                             <span aria-hidden="true">×</span>
                         </button>
                     </div>
-                    <div class="modal-body">
-                        <form autocomplete="off">
+                    <Form
+                        @submit="createUser"
+                        :validation-schema="schema"
+                        v-slot="{ errors }"
+                    >
+                        <div class="modal-body">
                             <div class="form-group">
                                 <label for="name">Name</label>
-                                <input
-                                    v-model="form.name"
+                                <Field
+                                    name="name"
                                     type="text"
                                     class="form-control"
+                                    :class="{ 'is-invalid': errors.name }"
                                     id="name"
                                 />
+                                <span class="invalid-feedback">{{
+                                    errors.name
+                                }}</span>
                             </div>
                             <div class="form-group">
                                 <label for="email">Email</label>
-                                <input
-                                    v-model="form.email"
+                                <Field
+                                    name="email"
                                     type="text"
                                     class="form-control"
+                                    :class="{ 'is-invalid': errors.email }"
                                     id="email"
                                 />
+                                <span class="invalid-feedback">{{
+                                    errors.email
+                                }}</span>
                             </div>
                             <div class="form-group">
                                 <label for="name">Password</label>
-                                <input
-                                    v-model="form.password"
+                                <Field
+                                    name="password"
                                     type="password"
                                     class="form-control"
+                                    :class="{ 'is-invalid': errors.password }"
                                     id="password"
                                 />
+                                <span class="invalid-feedback">{{
+                                    errors.password
+                                }}</span>
                             </div>
                             <div class="d-flex justify-content-end">
                                 <button
@@ -147,15 +179,14 @@ onMounted(() => {
                                 >
                                     Cancel
                                 </button>
-                                <button type="button" @click.prevent="createUser" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary">
                                     Save changes
                                 </button>
                             </div>
-                        </form>
-                    </div>
+                        </div>
+                    </Form>
                 </div>
             </div>
         </div>
     </div>
 </template>
- 
