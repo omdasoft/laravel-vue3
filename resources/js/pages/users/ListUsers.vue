@@ -10,11 +10,7 @@ const editing = ref(false);
 const formValues = ref();
 const form = ref(null);
 const toastr = useToastr();
-// const form = reactive({
-//     name: "",
-//     email: "",
-//     password: "",
-// });
+const userId = ref(null);
 
 const getUsers = () => {
     axios.get("/api/users").then((response) => {
@@ -33,58 +29,62 @@ const editUserSchema = object({
     name: string().required(),
     email: string().email().required(),
     password: string().when((password, schema) => {
-        return password ? schema.min(8) : schema
+        return password ? schema.min(8) : schema;
     }),
 });
 
 const handleSubmit = (values, action) => {
     if (editing.value) {
-        updateUser(values, action)
+        updateUser(values, action);
     } else {
-        createUser(values, action)
+        createUser(values, action);
     }
-}
+};
 
 const createUser = (values, { resetForm, setErrors }) => {
-    axios.post("/api/users", values).then((respnse) => {
-        users.value.unshift(respnse.data);
-        $("#userFormModal").modal("hide");
-        resetForm();
-        toastr.success('User created successfully');
-    })
-    .catch((error) => {
-        if(error.response.data.errors) {
-            setErrors(error.response.data.errors);
-        }
-    });
+    axios
+        .post("/api/users", values)
+        .then((respnse) => {
+            users.value.unshift(respnse.data);
+            $("#userFormModal").modal("hide");
+            resetForm();
+            toastr.success("User created successfully");
+        })
+        .catch((error) => {
+            if (error.response.data.errors) {
+                setErrors(error.response.data.errors);
+            }
+        });
 };
 
 const updateUser = (values, { setErrors }) => {
-    axios.put('/api/users/' + formValues.value.id, values)
-    .then((response) => {
-        const index = users.value.findIndex(function(user) {
-            return user.id = response.data.id;
+    axios
+        .put("/api/users/" + formValues.value.id, values)
+        .then((response) => {
+            const index = users.value.findIndex(function (user) {
+                return (user.id = response.data.id);
+            });
+            users.value[index] = response.data;
+            $("#userFormModal").modal("hide");
+            toastr.success("User updated successfully");
         })
-        users.value[index] = response.data;
-        $("#userFormModal").modal("hide");
-        toastr.success('User updated successfully');
-    }).catch((error) => {
-        if(error.response.data.errors) {
-            setErrors(error.response.data.errors);
-        }
-        console.log(error)
-    });
-}
+        .catch((error) => {
+            if (error.response.data.errors) {
+                setErrors(error.response.data.errors);
+            }
+            console.log(error);
+        });
+};
 
 const addUser = () => {
     formValues.value = {
-        id: '',
-        name: '',
-        email: ''
-    }
+        id: "",
+        name: "",
+        email: "",
+    };
     editing.value = false;
     $("#userFormModal").modal("show");
-}
+};
 
 const editUser = (user) => {
     form.value.resetForm();
@@ -93,19 +93,23 @@ const editUser = (user) => {
     formValues.value = {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
     };
-}
-// const createUser = () => {
-//     axios.post("/api/users", form).then((respnse) => {
-//         users.value.unshift(respnse.data);
-//         form.name = "";
-//         form.email = "";
-//         form.password = "";
-//         $("#createNewUser").modal("hide");
-//     });
-// };
+};
 
+const confirmUserDelete = (user) => {
+    userId.value = user.id;
+    $("#deleteUserConfirm").modal("show");
+}
+
+const deleteUser = () => {
+    axios.delete('/api/users/'+ userId.value)
+    .then((response) => {
+        users.value = users.value.filter((user) => user.id != userId.value);
+        $("#deleteUserConfirm").modal("hide"); 
+        toastr.success("User deleted successfully");
+    });
+}
 onMounted(() => {
     getUsers();
 });
@@ -161,7 +165,16 @@ onMounted(() => {
                                         <td>{{ user.created_at }}</td>
                                         <td>role</td>
                                         <td>
-                                            <a href="#" @click.prevent="editUser(user)"><i class="fa fa-edit"></i></a>
+                                            <a
+                                                href="#"
+                                                @click.prevent="editUser(user)"
+                                                ><i class="fa fa-edit"></i
+                                            ></a>
+                                            <a
+                                                href="#"
+                                                @click.prevent="confirmUserDelete(user)"
+                                                ><i class="fa fa-trash text-danger ml-2"></i
+                                            ></a>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -182,7 +195,7 @@ onMounted(() => {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h4 class="modal-title">
-                            <span v-if="editing">Edit User</span> 
+                            <span v-if="editing">Edit User</span>
                             <span v-else>Create New User</span>
                         </h4>
                         <button
@@ -197,7 +210,9 @@ onMounted(() => {
                     <Form
                         ref="form"
                         @submit="handleSubmit"
-                        :validation-schema="editing ? editUserSchema : createUserSchema"
+                        :validation-schema="
+                            editing ? editUserSchema : createUserSchema
+                        "
                         v-slot="{ errors }"
                         :initial-values="formValues"
                     >
@@ -255,6 +270,47 @@ onMounted(() => {
                             </div>
                         </div>
                     </Form>
+                </div>
+            </div>
+        </div>
+        <div
+            class="modal fade"
+            id="deleteUserConfirm"
+            style="display: none"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">
+                            <span>Delete User</span>
+                        </h4>
+                        <button
+                            type="button"
+                            class="close"
+                            data-dismiss="modal"
+                            aria-label="Close"
+                        >
+                            <span aria-hidden="true">×</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="lead">Are you sure you want to delete this user ?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="d-flex justify-content-end">
+                            <button
+                                type="button"
+                                class="btn btn-default mr-2"
+                                data-dismiss="modal"
+                            >
+                                Cancel
+                            </button>
+                            <button class="btn btn-danger" @click.prevent="deleteUser()">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
