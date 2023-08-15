@@ -2,13 +2,14 @@
 import { ref, onMounted, reactive } from "vue";
 import { Form, Field, ErrorMessage, useSetFieldError } from "vee-validate";
 import { object, string, number, date } from "yup";
-
+import { useToastr } from "../../toastr.js";
 // import * as yup from "yup";
 
 const users = ref({});
 const editing = ref(false);
 const formValues = ref();
 const form = ref(null);
+const toastr = useToastr();
 // const form = reactive({
 //     name: "",
 //     email: "",
@@ -49,6 +50,7 @@ const createUser = (values, { resetForm, setErrors }) => {
         users.value.unshift(respnse.data);
         $("#userFormModal").modal("hide");
         resetForm();
+        toastr.success('User created successfully');
     })
     .catch((error) => {
         if(error.response.data.errors) {
@@ -65,6 +67,7 @@ const updateUser = (values, { setErrors }) => {
         })
         users.value[index] = response.data;
         $("#userFormModal").modal("hide");
+        toastr.success('User updated successfully');
     }).catch((error) => {
         if(error.response.data.errors) {
             setErrors(error.response.data.errors);
