@@ -43,8 +43,12 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function getRegistrationDateAttribute()
+    protected $appends = [
+        'formated_created_at',
+    ];
+
+    public function getFormatedCreatedAtAttribute()
     {
-        return $this->attributes['created_at']->format('Y-m-d');
+        return $this->created_at->format(config('app.date_format'));
     }
 }

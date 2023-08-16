@@ -3,6 +3,7 @@ import { ref, onMounted, reactive } from "vue";
 import { Form, Field, ErrorMessage, useSetFieldError } from "vee-validate";
 import { object, string, number, date } from "yup";
 import { useToastr } from "../../toastr.js";
+import { formatDate } from '../../helpers/golbal.js';
 // import * as yup from "yup";
 
 const users = ref({});
@@ -162,7 +163,7 @@ onMounted(() => {
                                         <td>{{ ++index }}</td>
                                         <td>{{ user.name }}</td>
                                         <td>{{ user.email }}</td>
-                                        <td>{{ user.created_at }}</td>
+                                        <td>{{ formatDate(user.created_at) }}</td>
                                         <td>role</td>
                                         <td>
                                             <a
